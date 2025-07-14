@@ -8,6 +8,7 @@ from Utils.ControlValues import Controls as controls
 from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score
 from sklearn.model_selection import GridSearchCV
 import random
+import joblib
 
 class Predictions: # All predicted / test result values from the model
     y = 0
@@ -46,11 +47,12 @@ Train.X, Test.X, Train.Y, Test.Y = train_test_split(
     random_state=controls.random_state
 )
 
+'''
 # Create Model
 grid = GridSearchCV(
     estimator=RandomForestClassifier(random_state=controls.random_state),
     param_grid=param_grid,
-    scoring='recall',
+    scoring='f1',
     cv=3,
     verbose=2,
     n_jobs=-1
@@ -64,6 +66,9 @@ rf = grid.best_estimator_
 
 print(f"\nBest parameters found: {grid.best_params_}")
 print(f"\nBest recall score during CV: {grid.best_score_}")
+'''
+
+rf = joblib.load('PKLs/Models/RandomForest.pkl')
 
 # Predictions
 Predictions.y = rf.predict(Test.X)
@@ -77,8 +82,11 @@ print(f"Recall: {Predictions.recall:.4f}")
 print(f"Precision: {Predictions.precision:.4f}")
 print(f"F1 Score: {Predictions.f1:.4f}")
 
-fileName = "RFM-" + str(random.randint(0, 100000)) + ".txt"
-
-print(f"Saved under file:", fileName)
-with open("Results/" + fileName, "w") as f:
-  f.write(f"\nRandom Forest Model Performance:\nRecall: {Predictions.recall:.4f}\nPrecision: {Predictions.precision:.4f}\nF1 Score: {Predictions.f1:.4f}")
+joblib.dump(
+    [
+        Predictions.recall,
+        Predictions.precision,
+        Predictions.f1
+    ],
+    'PKLs/Data/RandomForest.pkl'
+)
