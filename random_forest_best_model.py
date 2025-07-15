@@ -18,21 +18,47 @@ df = pd.read_csv("creditcard.csv")
 X = df.drop("Class", axis=1)
 y = df["Class"]
 
+
 # Use same train/test split OR full data
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
 
 # Load best model
 model = joblib.load("best_random_forest_model.pkl")
 
-# Predict
-y_pred = model.predict(X_test)
+print("PARAMS:", model.get_params())
+
+'''rf = RandomForestClassifier(
+    bootstrap=True,
+    ccp_alpha=0.0,
+    class_weight={0: 1, 1: 10},
+    criterion='gini',
+    max_depth=15,
+    max_features='sqrt',
+    max_leaf_nodes=None,
+    max_samples=None,
+    min_impurity_decrease=0.0,
+    min_samples_leaf=2,
+    min_samples_split=5,
+    min_weight_fraction_leaf=0.0,
+    n_estimators=200,
+    n_jobs=None,
+    oob_score=False,
+    random_state=42,
+    verbose=0,
+    warm_start=False
+)
+'''
+
 y_pred_train = model.predict(X_train)
+y_pred = model.predict(X_test)
 
 # Calculate metrics
 accuracy_train = accuracy_score(y_train, y_pred_train)
 recall_train = recall_score(y_train, y_pred_train)
 precision_train = precision_score(y_train, y_pred_train)
 f1_train = f1_score(y_train, y_pred_train)
+
+
 
 accuracy_test = accuracy_score(y_test, y_pred)
 recall_test = recall_score(y_test, y_pred)
