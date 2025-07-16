@@ -8,26 +8,21 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
+from sklearn.ensemble import RandomForestClassifier
 
 # Create a custom greenish colormap
 greenish_cmap = LinearSegmentedColormap.from_list("custom_greenish", ["#e0f7f4", "#2ec4b6"])
 
 # Load data
-df = pd.read_csv("creditcard.csv")
+df = pd.read_csv("Utils/creditcard.csv")
 # Preprocessing (use same as training script)
 X = df.drop("Class", axis=1)
 y = df["Class"]
 
-
 # Use same train/test split OR full data
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
 
-# Load best model
-model = joblib.load("best_random_forest_model.pkl")
-
-print("PARAMS:", model.get_params())
-
-'''rf = RandomForestClassifier(
+model = RandomForestClassifier(
     bootstrap=True,
     ccp_alpha=0.0,
     class_weight={0: 1, 1: 10},
@@ -47,7 +42,7 @@ print("PARAMS:", model.get_params())
     verbose=0,
     warm_start=False
 )
-'''
+model.fit(X_train, y_train)
 
 y_pred_train = model.predict(X_train)
 y_pred = model.predict(X_test)
@@ -57,8 +52,6 @@ accuracy_train = accuracy_score(y_train, y_pred_train)
 recall_train = recall_score(y_train, y_pred_train)
 precision_train = precision_score(y_train, y_pred_train)
 f1_train = f1_score(y_train, y_pred_train)
-
-
 
 accuracy_test = accuracy_score(y_test, y_pred)
 recall_test = recall_score(y_test, y_pred)
@@ -79,6 +72,18 @@ print("F1 Score TEST:", f"{f1_test:.4f} ({f1_test*100:.2f}%)")
 print("\nClassification Report (Test Set):")
 print(classification_report(y_test, y_pred, digits=4))
 
+joblib.dump(model, 'Models/best_random_forest_model.pkl')
+joblib.dump([
+    accuracy_test, # 0
+    recall_test, # 1
+    precision_test, # 2
+    f1_test, # 3
+    y_test, # 4
+    y_pred, # 5
+    X_test, # 6
+], 'Data/random_forest_model.pkl')
+
+'''
 # --- Feature Importance Data ---
 importances = model.feature_importances_
 feature_names = X.columns
@@ -133,5 +138,4 @@ axes[2].grid(True, alpha=0.3)
 
 plt.tight_layout()
 plt.show()
-
-
+'''

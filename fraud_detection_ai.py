@@ -6,7 +6,7 @@ import joblib
 
 # Load dataset
 print("Hello World")
-df = pd.read_csv('creditcard.csv')
+df = pd.read_csv('Utils/creditcard.csv')
 print("Dataset loaded successfully!")
 
 # Features and labels
@@ -85,14 +85,4 @@ for i, rank in enumerate(top_indices):
 
 # Save the best model using joblib
 print("\nSaving the best model...")
-joblib.dump(best_model, 'best_random_forest_model.pkl')
-print("Best model saved as 'best_random_forest_model.pkl'")
-
-# Also save the grid search results for future reference
-joblib.dump(grid_search, 'grid_search_results.pkl')
-print("Grid search results saved as 'grid_search_results.pkl'")
-
-# Example of how to load and use the saved model
-print("\nExample of loading the saved model:")
-print("loaded_model = joblib.load('best_random_forest_model.pkl')")
-print("predictions = loaded_model.predict(X_test)")
+joblib.dump(best_model, 'Models/best_random_forest_model.pkl')

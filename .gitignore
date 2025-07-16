@@ -1,3 +1,6 @@
 creditcard.csv
+output.log
+todo.txt
+requirements.txt
 __pycache__
 *.pkl

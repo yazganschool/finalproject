@@ -10,8 +10,9 @@ import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
 from sklearn.preprocessing import StandardScaler
 from imblearn.over_sampling import SMOTE
+from sklearn.linear_model import LogisticRegression
 
-df = pd.read_csv('creditcard.csv')
+df = pd.read_csv('Utils/creditcard.csv')
 
 X = df.drop('Class', axis=1)
 y = df['Class']
@@ -31,9 +32,9 @@ X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
 print("After SMOTE:")
 print("Training set class distribution:", dict(pd.Series(y_train_resampled).value_counts()))
 
-
-model = joblib.load('best_logistic_model.pkl')
-
+model = joblib.load("Models/best_logistic_model.pkl")
+# LogisticRegression(C=10, l1_ratio=1.0, max_iter=300, penalty='elasticnet',random_state=42, solver='saga')
+# model.fit(X=X_train_resampled, y=y_train_resampled)
 
 y_pred_proba = model.predict_proba(X_test)[:, 1]
 
@@ -41,22 +42,21 @@ y_pred_proba = model.predict_proba(X_test)[:, 1]
 threshold = 0.999
 y_pred = (y_pred_proba >= threshold).astype(int)
 
-
 print("Accuracy:", accuracy_score(y_test, y_pred))
 print("Recall:", recall_score(y_test, y_pred))
 print("Precision:", precision_score(y_test, y_pred))
 print("F1 Score:", f1_score(y_test, y_pred))
 
-model = joblib.load('best_logistic_model.pkl')
-print(model)
+dataList = [
+    accuracy_score(y_test, y_pred),
+    recall_score(y_test, y_pred),
+    precision_score(y_test, y_pred),
+    f1_score(y_test, y_pred)
+]
+joblib.dump(
+    dataList,
+    "Data/logistic_model.pkl"
+)
+print("Data saved in logistic_model.pkl")
 
-#Parameters LogisticRegression(C=10, l1_ratio=1.0, max_iter=300, penalty='elasticnet',random_state=42, solver='saga')
-
-#TODO:
-#1. FINISH GRAPHS
-
-
-
-
-
-
+#joblib.dump(model, "Models/best_logistic_model.pkl")
