@@ -14,7 +14,7 @@ from sklearn.ensemble import RandomForestClassifier
 greenish_cmap = LinearSegmentedColormap.from_list("custom_greenish", ["#e0f7f4", "#2ec4b6"])
 
 # Load data
-df = pd.read_csv("Utils/creditcard.csv")
+df = pd.read_csv("creditcard.csv")
 # Preprocessing (use same as training script)
 X = df.drop("Class", axis=1)
 y = df["Class"]

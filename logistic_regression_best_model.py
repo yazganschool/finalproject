@@ -12,7 +12,7 @@ from sklearn.preprocessing import StandardScaler
 from imblearn.over_sampling import SMOTE
 from sklearn.linear_model import LogisticRegression
 
-df = pd.read_csv('Utils/creditcard.csv')
+df = pd.read_csv('creditcard.csv')
 
 X = df.drop('Class', axis=1)
 y = df['Class']
@@ -32,7 +32,7 @@ X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
 print("After SMOTE:")
 print("Training set class distribution:", dict(pd.Series(y_train_resampled).value_counts()))
 
-model = joblib.load("Models/best_logistic_model.pkl")
+model = joblib.load("best_logistic_model.pkl")
 # LogisticRegression(C=10, l1_ratio=1.0, max_iter=300, penalty='elasticnet',random_state=42, solver='saga')
 # model.fit(X=X_train_resampled, y=y_train_resampled)
 
@@ -58,7 +58,7 @@ dataList = [
 ]
 joblib.dump(
     dataList,
-    "Data/logistic_model.pkl"
+    "logistic_model.pkl"
 )
 print("Data saved in logistic_model.pkl")
 
