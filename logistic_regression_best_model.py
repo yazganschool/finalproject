@@ -48,10 +48,13 @@ print("Precision:", precision_score(y_test, y_pred))
 print("F1 Score:", f1_score(y_test, y_pred))
 
 dataList = [
-    accuracy_score(y_test, y_pred),
-    recall_score(y_test, y_pred),
-    precision_score(y_test, y_pred),
-    f1_score(y_test, y_pred)
+    accuracy_score(y_test, y_pred), # 0
+    recall_score(y_test, y_pred), # 1
+    precision_score(y_test, y_pred), # 2
+    f1_score(y_test, y_pred), # 3
+    y_test, # 4
+    y_pred, # 5
+    X_test, # 6
 ]
 joblib.dump(
     dataList,
@@ -60,3 +63,4 @@ joblib.dump(
 print("Data saved in logistic_model.pkl")
 
 #joblib.dump(model, "Models/best_logistic_model.pkl")
+#i didnt delete that let me see if i cna find

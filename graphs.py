@@ -32,7 +32,7 @@ fig.text(0.51, 0.42, "Logistic Regression Model", ha='center', fontsize=16)
 for ax, title in zip(axes, subtitles): ax.set_title(title)
 
 plt.tight_layout(rect=[0, 1, 1, 1])
-plt.subplots_adjust(hspace=0.8)
+plt.subplots_adjust(hspace=1.1)
 
 # Random Forest Model
 rfm_y_scores = Models.random_forest_model.predict_proba(Data.random_forest_model[6])[:, 1]
@@ -48,7 +48,7 @@ rfm_cm_normalized = rfm_cm / rfm_cm.sum()
 # // Feature Importance
 axes[0].barh(range(len(rfm_indices)), rfm_importances[rfm_indices], color='#2ec4b6', edgecolor='gray', height=0.6)
 axes[0].set_yticks(range(len(rfm_indices)))
-axes[0].set_yticklabels(list(rfm_feature_names[rfm_indices]), fontsize=12)
+axes[0].set_yticklabels(list(rfm_feature_names[rfm_indices]), fontsize=6)
 axes[0].set_xlabel('Importance Score', fontsize=13)
 for i, v in enumerate(rfm_importances[rfm_indices]):
     axes[0].text(v + 0.01, i, f"{v:.3f}", va='center', fontsize=8)
@@ -79,5 +79,50 @@ axes[2].legend(fontsize=12)
 axes[2].grid(True, alpha=0.3)
 
 # Logistic Regression Model
+lrm_y_scores = Models.logistic_model.predict_proba(Data.logistic_model[6])[:, 1]
+lrm_precision, lrm_recall, lrm_thresholds = precision_recall_curve(Data.logistic_model[4], lrm_y_scores)
+lrm_pr_auc = auc(lrm_recall, lrm_precision)
+#lrm_importances = Models.logistic_model.feature_importances_
+lrm_feature_names = X.columns
+#lrm_indices = np.argsort(lrm_importances)[-10:]  # Top 10 features
+
+lrm_cm = confusion_matrix(Data.logistic_model[4], Data.logistic_model[5])
+lrm_cm_normalized = lrm_cm / lrm_cm.sum()
+
+'''
+# // Feature Importance
+axes[0].barh(range(len(lrm_indices)), lrm_importances[lrm_indices], color='#2ec4b6', edgecolor='gray', height=0.6)
+axes[0].set_yticks(range(len(lrm_indices)))
+axes[0].set_yticklabels(list(lrm_feature_names[lrm_indices]), fontsize=12)
+axes[0].set_xlabel('Importance Score', fontsize=13)
+for i, v in enumerate(lrm_importances[lrm_indices]):
+    axes[0].text(v + 0.01, i, f"{v:.3f}", va='center', fontsize=8)
+axes[0].set_xlim(0, max(lrm_importances[lrm_indices]) * 1.2)
+axes[0].grid(axis='x', linestyle='--', alpha=0.5)
+'''
+
+# // Confusion Matrix
+green_cmap = LinearSegmentedColormap.from_list("custom_greenish", ["#e7f7e0", "#3bc42e"])
+sns.heatmap(
+    lrm_cm_normalized,
+    annot=True,
+    fmt=".2%",
+    cmap=green_cmap,
+    cbar=True,
+    xticklabels=['Not Fraud', 'Fraud'],
+    yticklabels=['Not Fraud', 'Fraud'],
+    annot_kws={"fontsize": 16, "weight": "bold"},
+    ax=axes[4]
+)
+axes[4].set_xlabel('Predicted Label', fontsize=12)
+axes[4].set_ylabel('True Label', fontsize=12)
+
+# // Precision-Recall Graph
+axes[5].plot(lrm_recall, lrm_precision, color="#3bc42e", linewidth=3, marker='o', alpha=.1, markersize=5, label=f'PR AUC = {lrm_pr_auc:.2f}')
+axes[5].set_xlabel('Recall', fontsize=13)
+axes[5].set_ylabel('Precision', fontsize=13)
+axes[5].legend(fontsize=12)
+axes[5].grid(True, alpha=0.3)
+
 
 plt.show()
