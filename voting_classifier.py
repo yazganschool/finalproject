@@ -46,7 +46,7 @@ voting_clf = VotingClassifier(
     weights=[0.2, 0.8],
     n_jobs=-1
 )
-
+#save the voting classifier
 # Fit the voting classifier
 voting_clf.fit(X_train, y_train)
 
