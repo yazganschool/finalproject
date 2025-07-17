@@ -15,13 +15,14 @@ from matplotlib.colors import LinearSegmentedColormap
 # 1. LOAD DATASET & MODELS
 # =====================================================
 print("[INFO] Loading dataset...")
-df = pd.read_csv("creditcard.csv")  # adjust path if needed
+df = pd.read_csv("Utils/creditcard.csv")  # adjust path if needed
 X = df.drop("Class", axis=1)
 y = df["Class"]
 
 print("[INFO] Loading trained models...")
-random_forest_model = joblib.load("best_random_forest_model.pkl")
-logistic_model = joblib.load("recall_logistic_model.pkl")
+random_forest_model = joblib.load("Models/best_random_forest_model.pkl")
+logistic_model = joblib.load("Models/recall_logistic_model.pkl")
+voting_classifier_model = joblib.load("Models/final_voting_classifier.pkl")
 
 # =====================================================
 # 2. RANDOM FOREST EVALUATION
@@ -59,6 +60,26 @@ lrm_cm = confusion_matrix(y, lrm_preds)
 lrm_cm_normalized = lrm_cm / lrm_cm.sum()
 
 # =====================================================
+# 2. VOTING CLASSIFIER EVALUATION
+# =====================================================
+print("[INFO] Evaluating Voting Classifier model...")
+vcm_y_scores = voting_classifier_model.predict_proba(X)[:, 1]
+vcm_preds = voting_classifier_model.predict(X)
+
+# Precision-Recall curve + AUC
+vcm_precision, vcm_recall, _ = precision_recall_curve(y, vcm_y_scores)
+vcm_pr_auc = auc(vcm_recall, vcm_precision)
+
+# Confusion matrix
+vcm_cm = confusion_matrix(y, vcm_preds)
+vcm_cm_normalized = vcm_cm / vcm_cm.sum()
+
+# Feature Importances
+#vcm_importances = voting_classifier_model.feature_importances_
+vcm_feature_names = X.columns
+#vcm_indices = np.argsort(vcm_importances)[-10:]  # Top 10 important features
+
+# =====================================================
 # 4. PLOTTING
 # =====================================================
 print("[INFO] Creating plots...")
@@ -69,7 +90,7 @@ subtitles = [
 ]
 
 # 2 rows (Random Forest top, Logistic Regression bottom)
-fig, axes = plt.subplots(2, 3, figsize=(22, 10))
+fig, axes = plt.subplots(3, 3, figsize=(22, 7))
 axes = axes.flatten()
 
 fig.text(0.51, 0.96, "Random Forest Model", ha='center', fontsize=18, weight='bold')
@@ -78,7 +99,7 @@ fig.text(0.51, 0.46, "Logistic Regression Model", ha='center', fontsize=18, weig
 for ax, title in zip(axes, subtitles):
     ax.set_title(title, fontsize=14)
 
-plt.subplots_adjust(hspace=0.4)
+plt.subplots_adjust(hspace=3)
 
 # ---------------- RANDOM FOREST PLOTS ---------------- #
 
@@ -150,6 +171,44 @@ axes[5].set_xlabel('Recall', fontsize=12)
 axes[5].set_ylabel('Precision', fontsize=12)
 axes[5].legend(fontsize=12)
 axes[5].grid(True, alpha=0.3)
+
+# ---------------- VOTING CLASSIFIER PLOTS ---------------- #
+
+## 1. RF Feature Importance
+'''
+axes[6].barh(range(len(vcm_indices)), vcm_importances[rfm_indices],
+             color="#972ec4", edgecolor='gray', height=0.6)
+axes[6].set_yticks(range(len(v)))
+axes[6].set_yticklabels(list(rfm_feature_names[rfm_indices]), fontsize=8)
+axes[6].set_xlabel('Importance Score', fontsize=12)
+axes[6].set_xlim(0, max(rfm_importances[rfm_indices]) * 1.2)
+axes[6].grid(axis='x', linestyle='--', alpha=0.5)
+'''
+
+## 2. LR Confusion Matrix
+purple_cmap = LinearSegmentedColormap.from_list("lr_purple", ["#f2e0f7", "#972ec4"])
+sns.heatmap(
+    vcm_cm_normalized,
+    annot=True,
+    fmt=".2%",
+    cmap=purple_cmap,
+    cbar=True,
+    xticklabels=['Not Fraud', 'Fraud'],
+    yticklabels=['Not Fraud', 'Fraud'],
+    annot_kws={"fontsize": 14, "weight": "bold"},
+    ax=axes[7]
+)
+axes[7].set_xlabel('Predicted Label', fontsize=12)
+axes[7].set_ylabel('True Label', fontsize=12)
+
+## 3. LR Precision-Recall Curve
+axes[8].plot(vcm_recall, vcm_precision, color="#972ec4", linewidth=3,
+             marker='o', alpha=0.1, markersize=5,
+             label=f'PR AUC = {lrm_pr_auc:.2f}')
+axes[8].set_xlabel('Recall', fontsize=12)
+axes[8].set_ylabel('Precision', fontsize=12)
+axes[8].legend(fontsize=12)
+axes[8].grid(True, alpha=0.3)
 
 plt.tight_layout(rect=[0, 0, 1, 0.95])
 plt.show()
