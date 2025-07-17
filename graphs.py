@@ -1,62 +1,101 @@
-from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, classification_report, confusion_matrix
-from matplotlib.colors import LinearSegmentedColormap
-from sklearn.metrics import precision_recall_curve
-from sklearn.metrics import auc
+import pandas as pd
+import numpy as np
+import joblib
 import matplotlib.pyplot as plt
 import seaborn as sns
-import numpy as np
-import pandas as pd
-import joblib
 
-df = pd.read_csv("Utils/creditcard.csv")
-# Preprocessing (use same as training script)
+from sklearn.metrics import (
+    precision_recall_curve,
+    confusion_matrix,
+    auc
+)
+from matplotlib.colors import LinearSegmentedColormap
+
+# =====================================================
+# 1. LOAD DATASET & MODELS
+# =====================================================
+print("[INFO] Loading dataset...")
+df = pd.read_csv("creditcard.csv")  # adjust path if needed
 X = df.drop("Class", axis=1)
 y = df["Class"]
 
-class Models:
-    logistic_model = joblib.load("Models/best_logistic_model.pkl")
-    random_forest_model = joblib.load("Models/best_random_forest_model.pkl")
-class Data:
-    logistic_model = joblib.load("Data/logistic_model.pkl")
-    random_forest_model = joblib.load("Data/random_forest_model.pkl")
+print("[INFO] Loading trained models...")
+random_forest_model = joblib.load("best_random_forest_model.pkl")
+logistic_model = joblib.load("recall_logistic_model.pkl")
+
+# =====================================================
+# 2. RANDOM FOREST EVALUATION
+# =====================================================
+print("[INFO] Evaluating Random Forest model...")
+rfm_y_scores = random_forest_model.predict_proba(X)[:, 1]
+rfm_preds = random_forest_model.predict(X)
+
+# Precision-Recall curve + AUC
+rfm_precision, rfm_recall, _ = precision_recall_curve(y, rfm_y_scores)
+rfm_pr_auc = auc(rfm_recall, rfm_precision)
+
+# Confusion matrix
+rfm_cm = confusion_matrix(y, rfm_preds)
+rfm_cm_normalized = rfm_cm / rfm_cm.sum()
+
+# Feature Importances
+rfm_importances = random_forest_model.feature_importances_
+rfm_feature_names = X.columns
+rfm_indices = np.argsort(rfm_importances)[-10:]  # Top 10 important features
+
+# =====================================================
+# 3. LOGISTIC REGRESSION EVALUATION
+# =====================================================
+print("[INFO] Evaluating Logistic Regression model...")
+lrm_y_scores = logistic_model.predict_proba(X)[:, 1]
+lrm_preds = logistic_model.predict(X)
+
+# Precision-Recall curve + AUC
+lrm_precision, lrm_recall, _ = precision_recall_curve(y, lrm_y_scores)
+lrm_pr_auc = auc(lrm_recall, lrm_precision)
+
+# Confusion matrix
+lrm_cm = confusion_matrix(y, lrm_preds)
+lrm_cm_normalized = lrm_cm / lrm_cm.sum()
+
+# =====================================================
+# 4. PLOTTING
+# =====================================================
+print("[INFO] Creating plots...")
 
 subtitles = [
+    "Feature Importance", "Confusion Matrix", "Precision-Recall Curve",
     "Feature Importance", "Confusion Matrix", "Precision-Recall Curve"
 ]
 
-fig, axes = plt.subplots(2, 3, figsize=(22, 6))
+# 2 rows (Random Forest top, Logistic Regression bottom)
+fig, axes = plt.subplots(2, 3, figsize=(22, 10))
 axes = axes.flatten()
 
-fig.text(0.51, 0.94, "Random Forest Model", ha='center', fontsize=16)
-fig.text(0.51, 0.42, "Logistic Regression Model", ha='center', fontsize=16)
-for ax, title in zip(axes, subtitles): ax.set_title(title)
+fig.text(0.51, 0.96, "Random Forest Model", ha='center', fontsize=18, weight='bold')
+fig.text(0.51, 0.46, "Logistic Regression Model", ha='center', fontsize=18, weight='bold')
 
-plt.tight_layout(rect=[0, 1, 1, 1])
-plt.subplots_adjust(hspace=1.1)
+for ax, title in zip(axes, subtitles):
+    ax.set_title(title, fontsize=14)
 
-# Random Forest Model
-rfm_y_scores = Models.random_forest_model.predict_proba(Data.random_forest_model[6])[:, 1]
-rfm_precision, rfm_recall, rfm_thresholds = precision_recall_curve(Data.random_forest_model[4], rfm_y_scores)
-rfm_pr_auc = auc(rfm_recall, rfm_precision)
-rfm_importances = Models.random_forest_model.feature_importances_
-rfm_feature_names = X.columns
-rfm_indices = np.argsort(rfm_importances)[-10:]  # Top 10 features
+plt.subplots_adjust(hspace=0.4)
 
-rfm_cm = confusion_matrix(Data.random_forest_model[4], Data.random_forest_model[5])
-rfm_cm_normalized = rfm_cm / rfm_cm.sum()
+# ---------------- RANDOM FOREST PLOTS ---------------- #
 
-# // Feature Importance
-axes[0].barh(range(len(rfm_indices)), rfm_importances[rfm_indices], color='#2ec4b6', edgecolor='gray', height=0.6)
+## 1. RF Feature Importance
+axes[0].barh(range(len(rfm_indices)), rfm_importances[rfm_indices],
+             color='#2ec4b6', edgecolor='gray', height=0.6)
 axes[0].set_yticks(range(len(rfm_indices)))
-axes[0].set_yticklabels(list(rfm_feature_names[rfm_indices]), fontsize=6)
-axes[0].set_xlabel('Importance Score', fontsize=13)
-for i, v in enumerate(rfm_importances[rfm_indices]):
-    axes[0].text(v + 0.01, i, f"{v:.3f}", va='center', fontsize=8)
+axes[0].set_yticklabels(list(rfm_feature_names[rfm_indices]), fontsize=8)
+axes[0].set_xlabel('Importance Score', fontsize=12)
 axes[0].set_xlim(0, max(rfm_importances[rfm_indices]) * 1.2)
 axes[0].grid(axis='x', linestyle='--', alpha=0.5)
 
-# // Confusion Matrix
-blue_cmap = LinearSegmentedColormap.from_list("custom_greenish", ["#e0f7f4", "#2ec4b6"])
+for i, v in enumerate(rfm_importances[rfm_indices]):
+    axes[0].text(v + 0.001, i, f"{v:.3f}", va='center', fontsize=8)
+
+## 2. RF Confusion Matrix
+blue_cmap = LinearSegmentedColormap.from_list("rf_blue", ["#e0f7f4", "#2ec4b6"])
 sns.heatmap(
     rfm_cm_normalized,
     annot=True,
@@ -65,44 +104,30 @@ sns.heatmap(
     cbar=True,
     xticklabels=['Not Fraud', 'Fraud'],
     yticklabels=['Not Fraud', 'Fraud'],
-    annot_kws={"fontsize": 16, "weight": "bold"},
+    annot_kws={"fontsize": 14, "weight": "bold"},
     ax=axes[1]
 )
 axes[1].set_xlabel('Predicted Label', fontsize=12)
 axes[1].set_ylabel('True Label', fontsize=12)
 
-# // Precision-Recall Graph
-axes[2].plot(rfm_recall, rfm_precision, color="#2ec4b6", linewidth=3, marker='o', alpha=.1, markersize=5, label=f'PR AUC = {rfm_pr_auc:.2f}')
-axes[2].set_xlabel('Recall', fontsize=13)
-axes[2].set_ylabel('Precision', fontsize=13)
+## 3. RF Precision-Recall Curve
+axes[2].plot(rfm_recall, rfm_precision, color="#2ec4b6", linewidth=3,
+             marker='o', alpha=0.1, markersize=5,
+             label=f'PR AUC = {rfm_pr_auc:.2f}')
+axes[2].set_xlabel('Recall', fontsize=12)
+axes[2].set_ylabel('Precision', fontsize=12)
 axes[2].legend(fontsize=12)
 axes[2].grid(True, alpha=0.3)
 
-# Logistic Regression Model
-lrm_y_scores = Models.logistic_model.predict_proba(Data.logistic_model[6])[:, 1]
-lrm_precision, lrm_recall, lrm_thresholds = precision_recall_curve(Data.logistic_model[4], lrm_y_scores)
-lrm_pr_auc = auc(lrm_recall, lrm_precision)
-#lrm_importances = Models.logistic_model.feature_importances_
-lrm_feature_names = X.columns
-#lrm_indices = np.argsort(lrm_importances)[-10:]  # Top 10 features
+# ---------------- LOGISTIC REGRESSION PLOTS ---------------- #
 
-lrm_cm = confusion_matrix(Data.logistic_model[4], Data.logistic_model[5])
-lrm_cm_normalized = lrm_cm / lrm_cm.sum()
+## Logistic Regression has NO feature importances
+axes[3].text(0.5, 0.5, "Not Applicable\n(Logistic Regression coefficients instead)",
+             ha='center', va='center', fontsize=12, color="gray")
+axes[3].axis('off')
 
-'''
-# // Feature Importance
-axes[0].barh(range(len(lrm_indices)), lrm_importances[lrm_indices], color='#2ec4b6', edgecolor='gray', height=0.6)
-axes[0].set_yticks(range(len(lrm_indices)))
-axes[0].set_yticklabels(list(lrm_feature_names[lrm_indices]), fontsize=12)
-axes[0].set_xlabel('Importance Score', fontsize=13)
-for i, v in enumerate(lrm_importances[lrm_indices]):
-    axes[0].text(v + 0.01, i, f"{v:.3f}", va='center', fontsize=8)
-axes[0].set_xlim(0, max(lrm_importances[lrm_indices]) * 1.2)
-axes[0].grid(axis='x', linestyle='--', alpha=0.5)
-'''
-
-# // Confusion Matrix
-green_cmap = LinearSegmentedColormap.from_list("custom_greenish", ["#e7f7e0", "#3bc42e"])
+## 2. LR Confusion Matrix
+green_cmap = LinearSegmentedColormap.from_list("lr_green", ["#e7f7e0", "#3bc42e"])
 sns.heatmap(
     lrm_cm_normalized,
     annot=True,
@@ -111,18 +136,22 @@ sns.heatmap(
     cbar=True,
     xticklabels=['Not Fraud', 'Fraud'],
     yticklabels=['Not Fraud', 'Fraud'],
-    annot_kws={"fontsize": 16, "weight": "bold"},
+    annot_kws={"fontsize": 14, "weight": "bold"},
     ax=axes[4]
 )
 axes[4].set_xlabel('Predicted Label', fontsize=12)
 axes[4].set_ylabel('True Label', fontsize=12)
 
-# // Precision-Recall Graph
-axes[5].plot(lrm_recall, lrm_precision, color="#3bc42e", linewidth=3, marker='o', alpha=.1, markersize=5, label=f'PR AUC = {lrm_pr_auc:.2f}')
-axes[5].set_xlabel('Recall', fontsize=13)
-axes[5].set_ylabel('Precision', fontsize=13)
+## 3. LR Precision-Recall Curve
+axes[5].plot(lrm_recall, lrm_precision, color="#3bc42e", linewidth=3,
+             marker='o', alpha=0.1, markersize=5,
+             label=f'PR AUC = {lrm_pr_auc:.2f}')
+axes[5].set_xlabel('Recall', fontsize=12)
+axes[5].set_ylabel('Precision', fontsize=12)
 axes[5].legend(fontsize=12)
 axes[5].grid(True, alpha=0.3)
 
-
+plt.tight_layout(rect=[0, 0, 1, 0.95])
 plt.show()
+
+print("[INFO] Done!")
